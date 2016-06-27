@@ -6,7 +6,8 @@ import urllib.request
 #
 import time
 import string
-
+import urllib3
+ 
 # parsing HTML
 from bs4 import BeautifulSoup
 #
@@ -16,7 +17,8 @@ from datetime import date
 ПО дате лучше не ориентироваться. Странная система на сайте.
 """
 
-BASE_URL = 'https://www.weblancer.net/jobs/?type=project'
+BASE_URL = 'https://www.weblancer.net'
+PROJECTS_URL = 'https://www.weblancer.net/jobs/?type=project'
 
 def get_html(url):
 	response = urllib.request.urlopen(url)
@@ -34,13 +36,16 @@ def get_project_count(html):
 	
 def parser(url,count):
 	date_today = datetime.now()
+	http = urllib3.PoolManager()
 	for number in range(1, count + 1) :
 		html = get_html(url+"&page={}".format(number))
 		soup = BeautifulSoup( html, "lxml" )
 		rows = soup.find('div', class_='container-fluid cols_table show_visited' )
 		for row in rows:
-			print("Title: %s" % row.find('a', class_ = "title" ).text )
-			print("Amount: %s" % row.find('div', class_ = "col-sm-2 amount title" ).text.strip() )
+			title = row.find('a', class_ = "title" ).text
+			amount = row.find('div', class_ = "col-sm-2 amount title" ).text.strip()
+			categories = row.find_all('a', class_ = "text-muted" )
+			link = row.find('a', class_ = "title" )["href"]
 			
 			date = row.find('span', class_ = "time_ago" )['title']
 			date_object = datetime.strptime( date, '%d.%m.%Y в %H:%M')
@@ -48,19 +53,45 @@ def parser(url,count):
 			days = date_delta.days
 			hours = date_delta.seconds/3600
 			minutes = date_delta.seconds/3600/3600
+			
+			#print("ROW:{}".format(row))
+			print("Title: %s" % title )
+			if amount:
+				print("Amount: %s" % amount )
+			else:
+				print("Amount: ---" )
+			
 			if days > 0:
 				print("Date: %d dayes" % days )
 			else:
 				print("Date: %.1f hours" % hours )
+			name_vategories = ""
+			#for category in categories:
+			#	name_vategories = name_vategories + category.text
+			name_vategories = ", ".join(["%s" % (category.text) for category in  categories])	
+			print("Category: %s" % name_vategories )
+			print("Link: %s" % link )
+#			page = http(BASE_URL + link)
+			#r = http.request('GET', BASE_URL + link)
+			#txt = r.data.decode('windows-1252')
+			#print(txt)
+## участок кода для получения содержимого
+			ht = get_html(BASE_URL + link)
+			print(ht)
+			sp = BeautifulSoup( ht, "lxml" )
+			print(sp)
+			#print(sp.read())
+			#print( "{}".format( page.read() )
+			print(" ")
 	
 def main():
-	HTML = get_html(BASE_URL)
+	HTML = get_html(PROJECTS_URL)
 #	total_pages = get_page_count(HTML)
 	total_projects = get_project_count(HTML)
 #	print('Всего найдено %d страниц...' % total_pages )
 	print('Всего найдено %s проектов...' % total_projects )
 	star = time.clock()
-	parser(BASE_URL,2)
+	parser(PROJECTS_URL,2)
 	stop = time.clock()
 	print("End: clock {}".format(stop - star) )
 	
