@@ -77,9 +77,15 @@ def parser(url,count):
 			#print(txt)
 ## участок кода для получения содержимого
 			ht = get_html(BASE_URL + link)
-			print(ht)
 			sp = BeautifulSoup( ht, "lxml" )
-			print(sp)
+			#objs = sp.find_all('div', class_='col-sm-12' )
+			#objs = sp.select( 'div.col-sm-12:nth-child(2)' )
+			objs = sp.select( 'div.col-sm-12 + div.col-sm-12' )
+			#for obj in objs:
+			#if len(objs) > 1:
+			if objs:
+				#print(objs.text.strip())
+				print(objs.text)
 			#print(sp.read())
 			#print( "{}".format( page.read() )
 			print(" ")
